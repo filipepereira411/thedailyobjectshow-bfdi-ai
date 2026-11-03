@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Object Show - Autenticação & BFDI</title>
+    <style>
+        :root {
+            --primary: #4caf50; /* Verde estilo BFDI / Campo de Jogos */
+            --primary-hover: #45a049;
+            --bfdi-blue: #00b4d8;
+            --dark: #1e1e24;
+            --light: #f4f7f6;
+            --card-bg: #ffffff;
+            --error: #e63946;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar / Status de Login */
+        .navbar {
+            background-color: var(--dark);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background-color: var(--error);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            display: none; /* Mostrado apenas quando logado */
+        }
+
+        /* Contentor Central */
+        .main-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        /* Cartão de Autenticação */
+        .auth-card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .auth-card h2 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .form-links {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .form-links a {
+            color: var(--bfdi-blue);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .form-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Painel de Acesso BFDI (O Ligador) */
+        .bfdi-hub {
+            background: linear-gradient(135deg, #0077b6, #00b4d8);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+            text-align: center;
+            opacity: 0.6;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        /* Classe ativada via JS após login */
+        .bfdi-hub.unlocked {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1.02);
+        }
+
+        .bfdi-hub h2 {
+            margin-top: 0;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .lock-notice {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+
+        .bfdi-btn {
+            display: inline-block;
+            background-color: #ffb703;
+            color: #212529;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .bfdi-btn:hover {
+            background-color: #fcbf49;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Cima com Estado de Login -->
+    <nav class="navbar">
+        <h1>OS Portal</h1>
+        <div class="user-status">
+            <span id="nav-user-text">Estado: 🔴 Desconectado</span>
+            <button class="logout-btn" id="logoutBtn" onclick="processLogout()">Sair (Logout)</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        
+        <!-- Cartão Principal de Autenticação -->
+        <div class="auth-card" id="authSection">
+            
+            <!-- FORMULÁRIO 1: LOGIN -->
+            <form id="loginForm" class="auth-form active" onsubmit="event.preventDefault(); processLogin();">
+                <h2>Iniciar Sessão</h2>
+                <div class="form-group">
+                    <label for="login-user">Utilizador ou Email</label>
+                    <input type="text" id="login-user" required placeholder="Inserir utilizador">
+                </div>
+                <div class="form-group">
+                    <label for="login-pass">Senha (Password)</label>
+                    <input type="password" id="login-pass" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="submit-btn">Entrar</button>
+                <div class="form-links">
+                    <p>Não tens conta? <a href="#" onclick="switchForm('registerForm')">Regista-te aqui</a></p>
+                    <p><a href="#" onclick="switchForm('recoverForm')">Esqueci-me da senha!</a></p>
+                </div>
+            </form>
+
+            <!-- FORMULÁRIO 2: REGISTO -->
+            <form id="registerForm" class="auth-form" onsubmit="event.preventDefault(); switchForm('loginForm'); alert('Conta criada com sucesso! Faça login.');">
+                <h2>Criar Nova Conta</h2>
+                <div class="form-group">
+                    <label for="reg-user">Nome de Utilizador</label>
+                    <input type="text" id="reg-user" required placeholder="Ex: FireyFan">
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">E-mail</label>
+                    <input type="email" id="reg-email" required placeholder="nome@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label for="reg-pass">Senha</label>
+                    <input type="password" id="reg-pass" required placeholder="Mínimo 6 caracteres">
+                </div>
+                <button type="submit" class="submit-btn">Criar Conta</button>
+                <div class="form-links">
+                    <p>Já tens conta? <a href="#" onclick="switchForm('loginForm')">Inicia sessão</a></p>
+                </div>
+            </form>
+
+            <!-- FORMULÁRIO 3: RECUPERAÇÃO DE SENHA (ESQUECI A SENHA) -->
+            <form id="recoverForm" class="auth-form" onsubmit="event.preventDefault(); alert('Se o e-mail existir no sistema, receberá um link de recuperação em breve.'); switchForm('loginForm');">
+                <h2>Recuperar Senha</h2>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;">Insere o teu e-mail associado à conta para receberes as instruções de redefinição.</p>
+                <div class="form-group">
+                    <label for="recover-email">O teu E-mail</label>
+                    <input type="email" id="recover-email" required placeholder="nome@exemplo.com">
+                </div>
+                <button type="submit" class="submit-btn">Enviar Link de Recuperação</button>
+                <div class="form-links">
+                    <p>Lembraste-te? <a href="#" onclick="switchForm('loginForm')">Voltar ao Login</a></p>
+                </div>
+            </form>
+
+            <!-- Mensagem Amigável Pós-Login -->
+            <div id="welcomeMessage" style="display: none; text-align: center;">
+                <h2>Bem-vindo de volta!</h2>
+                <p>A tua sessão está ativa. O acesso ao hub externo de BFDI foi desbloqueado no painel ao lado.</p>
+            </div>
+        </div>
+
+        <!-- O Ligador com Acesso a BFDI -->
+        <div class="bfdi-hub" id="bfdiHub">
+            <h2>Portal BFDI</h2>
+            <div class="lock-notice" id="lockNotice">🔒 Bloqueado — Inicia sessão para libertar o acesso</div>
